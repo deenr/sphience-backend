@@ -9,4 +9,8 @@ export class UsersService {
   public async findOneByEmail(email: string): Promise<User | null> {
     return this.prismaService.user.findFirst({ where: { email } });
   }
+
+  public async findOneById(id: string): Promise<User | null> {
+    return this.prismaService.user.findFirst({ where: { id } });
+  }
 }
