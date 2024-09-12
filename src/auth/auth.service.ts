@@ -1,18 +1,17 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
-import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
+import { CreateUserDto } from '../users/users.dto';
 
 @Injectable()
 export class AuthService {
   public constructor(
-    private readonly prismaService: PrismaService,
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService
   ) {}
 
-  public async signUp(firstName: string, lastName: string, email: string, password: string): Promise<{ accessToken: string }> {
+  public async signUp({ firstName, lastName, email, password, role }: CreateUserDto): Promise<{ accessToken: string }> {
     const existingUser = await this.usersService.findOneByEmail(email);
 
     if (existingUser) {
@@ -21,11 +20,11 @@ export class AuthService {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const user = await this.prismaService.user.create({ data: { firstName, lastName, email, password: hashedPassword } });
+    const user = await this.usersService.create({ firstName, lastName, email, password: hashedPassword, role });
     const accessToken = this.jwtService.sign({ id: user.id, email: user.email }, { secret: process.env.ACCESS_TOKEN_SECRET, expiresIn: process.env.ACCESS_TOKEN_EXPIRY });
     const refreshToken = this.jwtService.sign({ id: user.id, email: user.email }, { secret: process.env.REFRESH_TOKEN_SECRET, expiresIn: process.env.REFRESH_TOKEN_EXPIRY });
 
-    await this.prismaService.user.update({ where: { id: user.id }, data: { accessToken, refreshToken } });
+    await this.usersService.update(user.id, { accessToken, refreshToken });
 
     return { accessToken };
   }
@@ -41,7 +40,7 @@ export class AuthService {
       const accessToken = this.jwtService.sign({ id: user.id, email: user.email }, { secret: process.env.ACCESS_TOKEN_SECRET, expiresIn: process.env.ACCESS_TOKEN_EXPIRY });
       const refreshToken = this.jwtService.sign({ id: user.id, email: user.email }, { secret: process.env.REFRESH_TOKEN_SECRET, expiresIn: process.env.REFRESH_TOKEN_EXPIRY });
 
-      await this.prismaService.user.update({ where: { id: user.id }, data: { accessToken, refreshToken } });
+      await this.usersService.update(user.id, { accessToken, refreshToken });
 
       return { accessToken };
     }
@@ -54,20 +53,20 @@ export class AuthService {
       return;
     }
 
-    const user = await this.prismaService.user.findFirst({ where: { accessToken } });
+    const user = await this.usersService.findOneByAccessToken(accessToken);
 
     if (!user) {
       return;
     }
 
-    await this.prismaService.user.update({ where: { id: user.id }, data: { accessToken: null, refreshToken: null } });
+    await this.usersService.update(user.id, { accessToken: null, refreshToken: null });
   }
 
   public async getToken(accessToken: string): Promise<{ accessToken: string }> {
     if (!accessToken) {
       throw new UnauthorizedException();
     }
-    const user = await this.prismaService.user.findFirst({ where: { accessToken } });
+    const user = await this.usersService.findOneByAccessToken(accessToken);
 
     if (!user) {
       throw new UnauthorizedException();
@@ -85,7 +84,7 @@ export class AuthService {
 
         const newAccessToken = this.jwtService.sign({ id: user.id, email: user.email }, { secret: process.env.ACCESS_TOKEN_SECRET, expiresIn: process.env.ACCESS_TOKEN_EXPIRY });
 
-        await this.prismaService.user.update({ where: { id: user.id }, data: { accessToken: newAccessToken } });
+        await this.usersService.update(user.id, { accessToken: newAccessToken });
 
         return { accessToken };
       } catch (error) {
@@ -98,7 +97,7 @@ export class AuthService {
     if (!accessToken) {
       throw new UnauthorizedException();
     }
-    const user = await this.prismaService.user.findFirst({ where: { accessToken } });
+    const user = await this.usersService.findOneByAccessToken(accessToken);
 
     if (!user) {
       throw new UnauthorizedException();
@@ -108,7 +107,7 @@ export class AuthService {
 
       const accessToken = this.jwtService.sign({ id: user.id, email: user.email }, { secret: process.env.ACCESS_TOKEN_SECRET, expiresIn: process.env.ACCESS_TOKEN_EXPIRY });
 
-      await this.prismaService.user.update({ where: { id: user.id }, data: { accessToken } });
+      await this.usersService.update(user.id, { accessToken });
 
       return { accessToken };
     } catch (error) {
