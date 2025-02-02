@@ -2,7 +2,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
-import { CreateUserDto } from '../users/users.dto';
+import { CreateUserDto } from 'src/users/dto/create-user.dto';
 
 @Injectable()
 export class AuthService {
@@ -21,7 +21,7 @@ export class AuthService {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = await this.usersService.create({ firstName, lastName, email, password: hashedPassword, role });
-    const accessToken = this.jwtService.sign({ id: user.id, email: user.email }, { secret: process.env.ACCESS_TOKEN_SECRET, expiresIn: process.env.ACCESS_TOKEN_EXPIRY });
+    const accessToken = this.jwtService.sign({ id: user.id, email: user.email, role: user.role }, { secret: process.env.ACCESS_TOKEN_SECRET, expiresIn: process.env.ACCESS_TOKEN_EXPIRY });
     const refreshToken = this.jwtService.sign({ id: user.id, email: user.email }, { secret: process.env.REFRESH_TOKEN_SECRET, expiresIn: process.env.REFRESH_TOKEN_EXPIRY });
 
     await this.usersService.update(user.id, { accessToken, refreshToken });
@@ -37,7 +37,7 @@ export class AuthService {
     }
 
     if (await bcrypt.compare(password, user.password)) {
-      const accessToken = this.jwtService.sign({ id: user.id, email: user.email }, { secret: process.env.ACCESS_TOKEN_SECRET, expiresIn: process.env.ACCESS_TOKEN_EXPIRY });
+      const accessToken = this.jwtService.sign({ id: user.id, email: user.email, role: user.role }, { secret: process.env.ACCESS_TOKEN_SECRET, expiresIn: process.env.ACCESS_TOKEN_EXPIRY });
       const refreshToken = this.jwtService.sign({ id: user.id, email: user.email }, { secret: process.env.REFRESH_TOKEN_SECRET, expiresIn: process.env.REFRESH_TOKEN_EXPIRY });
 
       await this.usersService.update(user.id, { accessToken, refreshToken });
@@ -53,7 +53,7 @@ export class AuthService {
       return;
     }
 
-    const user = await this.usersService.findOneByAccessToken(accessToken);
+    const user = await this.usersService.findUserByAccessToken(accessToken);
 
     if (!user) {
       return;
@@ -66,7 +66,7 @@ export class AuthService {
     if (!accessToken) {
       throw new UnauthorizedException();
     }
-    const user = await this.usersService.findOneByAccessToken(accessToken);
+    const user = await this.usersService.findUserByAccessToken(accessToken);
 
     if (!user) {
       throw new UnauthorizedException();
@@ -82,7 +82,7 @@ export class AuthService {
       try {
         await this.jwtService.verifyAsync(refreshToken, { secret: process.env.REFRESH_TOKEN_SECRET });
 
-        const newAccessToken = this.jwtService.sign({ id: user.id, email: user.email }, { secret: process.env.ACCESS_TOKEN_SECRET, expiresIn: process.env.ACCESS_TOKEN_EXPIRY });
+        const newAccessToken = this.jwtService.sign({ id: user.id, email: user.email, role: user.role }, { secret: process.env.ACCESS_TOKEN_SECRET, expiresIn: process.env.ACCESS_TOKEN_EXPIRY });
 
         await this.usersService.update(user.id, { accessToken: newAccessToken });
 
@@ -97,7 +97,7 @@ export class AuthService {
     if (!accessToken) {
       throw new UnauthorizedException();
     }
-    const user = await this.usersService.findOneByAccessToken(accessToken);
+    const user = await this.usersService.findUserByAccessToken(accessToken);
 
     if (!user) {
       throw new UnauthorizedException();
@@ -105,7 +105,7 @@ export class AuthService {
     try {
       await this.jwtService.verifyAsync(user.refreshToken, { secret: process.env.REFRESH_TOKEN_SECRET });
 
-      const accessToken = this.jwtService.sign({ id: user.id, email: user.email }, { secret: process.env.ACCESS_TOKEN_SECRET, expiresIn: process.env.ACCESS_TOKEN_EXPIRY });
+      const accessToken = this.jwtService.sign({ id: user.id, email: user.email, role: user.role }, { secret: process.env.ACCESS_TOKEN_SECRET, expiresIn: process.env.ACCESS_TOKEN_EXPIRY });
 
       await this.usersService.update(user.id, { accessToken });
 
