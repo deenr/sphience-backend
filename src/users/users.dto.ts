@@ -1,6 +1,6 @@
 import { Role } from '@prisma/client';
 
-export class CreateUserDto {
+export interface CreateUserDto {
   firstName: string;
   lastName: string;
   email: string;
@@ -8,7 +8,7 @@ export class CreateUserDto {
   role: Role;
 }
 
-export class UpdateUserDto {
+export interface UpdateUserDto {
   firstName?: string;
   lastName?: string;
   email?: string;

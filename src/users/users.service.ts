@@ -8,7 +8,7 @@ export class UsersService {
   public constructor(private readonly prismaService: PrismaService) {}
 
   public async create(createUserDto: CreateUserDto): Promise<User> {
-    return this.prismaService.user.create({ data: { ...createUserDto } });
+    return this.prismaService.user.create({ data: { ...createUserDto, avatar: '' } });
   }
 
   public async findAll(): Promise<User[]> {
