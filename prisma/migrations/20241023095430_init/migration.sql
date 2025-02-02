@@ -8,8 +8,8 @@ CREATE TYPE "AreaOfInterest" AS ENUM ('CHEMISTRY', 'COMMUNICATION', 'COMPUTER_SC
 CREATE TABLE "Device" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
-    "shortDescription" TEXT NOT NULL,
-    "longDescription" TEXT NOT NULL,
+    "shortDescription" TEXT,
+    "longDescription" TEXT,
     "areaOfInterest" "AreaOfInterest",
     "imageUrl" TEXT,
     "locationName" TEXT NOT NULL,
@@ -42,6 +42,7 @@ CREATE TABLE "User" (
     "id" TEXT NOT NULL,
     "firstName" TEXT NOT NULL,
     "lastName" TEXT NOT NULL,
+    "avatar" TEXT NOT NULL,
     "email" TEXT NOT NULL,
     "password" TEXT NOT NULL,
     "role" "Role" NOT NULL DEFAULT 'STUDENT',

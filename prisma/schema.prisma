@@ -10,8 +10,8 @@ datasource db {
 model Device {
   id                     String           @id @default(cuid())
   name                   String
-  shortDescription       String
-  longDescription        String
+  shortDescription       String?
+  longDescription        String?
   areaOfInterest         AreaOfInterest?
   imageUrl               String?
   locationName           String
@@ -45,6 +45,7 @@ model User {
   id              String           @id @default(cuid())
   firstName       String
   lastName        String
+  avatar          String
   email           String           @unique
   password        String
   role            Role             @default(STUDENT)
@@ -59,14 +60,14 @@ model User {
 }
 
 model DeviceDocument {
-  id        String   @id @default(cuid())
-  name      String
-  user      User     @relation(fields: [userId], references: [id])
-  device    Device   @relation(fields: [deviceId], references: [id])
-  userId    String
-  deviceId  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String   @id @default(cuid())
+  name        String
+  uploadedBy  User     @relation(fields: [userId], references: [id])
+  device      Device   @relation(fields: [deviceId], references: [id])
+  userId      String
+  deviceId    String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   @@index([userId, deviceId])
 }
